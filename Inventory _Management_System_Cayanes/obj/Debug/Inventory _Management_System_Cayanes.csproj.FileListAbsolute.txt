@@ -1,0 +1,14 @@
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\bin\Debug\Inventory _Management_System_Cayanes.exe.config
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\bin\Debug\Inventory _Management_System_Cayanes.exe
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\bin\Debug\Inventory _Management_System_Cayanes.pdb
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\bin\Debug\System.Data.OleDb.dll
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\bin\Debug\System.Data.OleDb.xml
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory _Management_System_Cayanes.csproj.AssemblyReference.cache
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory__Management_System_Cayanes.Properties.Resources.resources
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory _Management_System_Cayanes.csproj.GenerateResource.cache
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory _Management_System_Cayanes.csproj.CoreCompileInputs.cache
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventor.CE4AD16E.Up2Date
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory _Management_System_Cayanes.exe
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory _Management_System_Cayanes.pdb
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory_Management_System_Cayanes.LoginForm.resources
+C:\Users\Dinno\source\repos\Inventory _Management_System_Cayanes\Inventory _Management_System_Cayanes\obj\Debug\Inventory_Management_System_Cayanes.Form1.resources
