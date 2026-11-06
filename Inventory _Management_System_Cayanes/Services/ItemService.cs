@@ -4,15 +4,18 @@ using System.Data;
 using System.Data.OleDb;
 using Inventory_Management_System_Cayanes.Models;
 using Inventory_Management_System_Cayanes.Data;
+
 namespace Inventory_Management_System_Cayanes.Services
 {
     public class ItemService
     {
         private DatabaseHelper _db;
+
         public ItemService()
         {
             _db = new DatabaseHelper();
         }
+
         public List<Item> GetAllItems()
         {
             List<Item> items = new List<Item>();
@@ -37,6 +40,7 @@ namespace Inventory_Management_System_Cayanes.Services
             }
             return items;
         }
+
         public Item GetItemById(int itemID)
         {
             try
@@ -60,22 +64,31 @@ namespace Inventory_Management_System_Cayanes.Services
                 throw new Exception("Error retrieving item: " + ex.Message, ex);
             }
         }
+
         public List<Item> SearchItems(string searchTerm)
         {
             List<Item> items = new List<Item>();
             try
             {
+                // OleDb is positional - need one parameter for each placeholder
                 string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
                                i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
                                i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
                                FROM Items i
                                LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.IsActive = True AND (i.ItemCode LIKE @SearchTerm OR i.ProductName LIKE @SearchTerm 
-                               OR i.Description LIKE @SearchTerm)
+                               WHERE i.IsActive = True AND (i.ItemCode LIKE @SearchTerm1 OR i.ProductName LIKE @SearchTerm2 
+                               OR i.Description LIKE @SearchTerm3)
                                ORDER BY i.ProductName";
-                string searchPattern = $"%{searchTerm}%";
-                OleDbParameter param = DatabaseHelper.CreateParameter("@SearchTerm", searchPattern);
-                DataTable result = _db.ExecuteDataTable(query, param);
+
+                string searchPattern = "%" + searchTerm + "%";
+                OleDbParameter[] parameters = new OleDbParameter[]
+                {
+                    DatabaseHelper.CreateParameter("@SearchTerm1", searchPattern),
+                    DatabaseHelper.CreateParameter("@SearchTerm2", searchPattern),
+                    DatabaseHelper.CreateParameter("@SearchTerm3", searchPattern)
+                };
+
+                DataTable result = _db.ExecuteDataTable(query, parameters);
                 foreach (DataRow row in result.Rows)
                 {
                     items.Add(MapRowToItem(row));
@@ -87,6 +100,7 @@ namespace Inventory_Management_System_Cayanes.Services
             }
             return items;
         }
+
         public int AddItem(Item item, int userID)
         {
             try
@@ -118,6 +132,7 @@ namespace Inventory_Management_System_Cayanes.Services
                 throw new Exception("Error adding item: " + ex.Message, ex);
             }
         }
+
         public bool UpdateItem(Item item, int userID)
         {
             try
@@ -146,6 +161,7 @@ namespace Inventory_Management_System_Cayanes.Services
                 throw new Exception("Error updating item: " + ex.Message, ex);
             }
         }
+
         public bool DeleteItem(int itemID)
         {
             try
@@ -159,6 +175,7 @@ namespace Inventory_Management_System_Cayanes.Services
                 throw new Exception("Error deleting item: " + ex.Message, ex);
             }
         }
+
         public List<Item> GetLowStockItems()
         {
             List<Item> items = new List<Item>();
@@ -183,6 +200,7 @@ namespace Inventory_Management_System_Cayanes.Services
             }
             return items;
         }
+
         public List<Item> GetItemsByCategory(int categoryID)
         {
             List<Item> items = new List<Item>();
@@ -208,6 +226,7 @@ namespace Inventory_Management_System_Cayanes.Services
             }
             return items;
         }
+
         public bool ItemCodeExists(string itemCode, int excludeItemID = 0)
         {
             try
@@ -226,19 +245,21 @@ namespace Inventory_Management_System_Cayanes.Services
                 return false;
             }
         }
+
         public decimal GetTotalInventoryValue()
         {
             try
             {
                 string query = "SELECT SUM(StockQuantity * UnitPrice) FROM Items WHERE IsActive = True";
                 object result = _db.ExecuteScalar(query);
-                return result == DBNull.Value ? 0 : Convert.ToDecimal(result);
+                return result == DBNull.Value || result == null ? 0 : Convert.ToDecimal(result);
             }
             catch
             {
                 return 0;
             }
         }
+
         private Item MapRowToItem(DataRow row)
         {
             return new Item
