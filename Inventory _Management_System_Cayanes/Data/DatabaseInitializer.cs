@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Data.OleDb;
+
 namespace Inventory_Management_System_Cayanes.Data
 {
     public class DatabaseInitializer
@@ -98,6 +99,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 return false;
             }
         }
+
         private static bool TableExists(OleDbConnection connection, string tableName)
         {
             try
@@ -114,6 +116,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 return false;
             }
         }
+
         private static int CountRows(OleDbConnection connection, string tableName)
         {
             try
@@ -122,7 +125,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 using (OleDbCommand cmd = new OleDbCommand(query, connection))
                 {
                     object result = cmd.ExecuteScalar();
-                    return result != null ? (int)result : 0;
+                    return result != null ? Convert.ToInt32(result) : 0;
                 }
             }
             catch
@@ -130,6 +133,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 return 0;
             }
         }
+
         private static void CreateUsersTable(OleDbConnection connection)
         {
             string query = @"
@@ -145,6 +149,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 )";
             ExecuteQuery(connection, query);
         }
+
         private static void CreateCategoriesTable(OleDbConnection connection)
         {
             string query = @"
@@ -157,6 +162,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 )";
             ExecuteQuery(connection, query);
         }
+
         private static void CreateItemsTable(OleDbConnection connection)
         {
             string query = @"
@@ -177,6 +183,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 )";
             ExecuteQuery(connection, query);
         }
+
         private static void CreateTransactionLogsTable(OleDbConnection connection)
         {
             string query = @"
@@ -195,6 +202,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 )";
             ExecuteQuery(connection, query);
         }
+
         private static void ExecuteQuery(OleDbConnection connection, string query)
         {
             try
@@ -210,24 +218,29 @@ namespace Inventory_Management_System_Cayanes.Data
                 System.Diagnostics.Debug.WriteLine("Error executing query: " + ex.Message);
             }
         }
+
         private static void InsertSampleData(OleDbConnection connection)
         {
             try
             {
+                // Both accounts use password: 123456
                 string adminHash = HashPassword("123456");
-                string userHash = "O3YR5+Y/G8VVU9hZ6zZ5Q5Y+qI8=";
+                string userHash = HashPassword("123456");
+
                 string insertAdmin = "INSERT INTO Users (Username, Email, PasswordHash, Role, IsActive, CreatedDate) VALUES ('admin', 'admin@inventory.com', @PasswordHash, 'Admin', True, Now())";
                 using (OleDbCommand cmd = new OleDbCommand(insertAdmin, connection))
                 {
                     cmd.Parameters.AddWithValue("@PasswordHash", adminHash);
                     cmd.ExecuteNonQuery();
                 }
+
                 string insertUser = "INSERT INTO Users (Username, Email, PasswordHash, Role, IsActive, CreatedDate) VALUES ('user', 'user@inventory.com', @PasswordHash, 'User', True, Now())";
                 using (OleDbCommand cmd = new OleDbCommand(insertUser, connection))
                 {
                     cmd.Parameters.AddWithValue("@PasswordHash", userHash);
                     cmd.ExecuteNonQuery();
                 }
+
                 string[] categories = new string[]
                 {
                     "Electronics",
@@ -245,6 +258,7 @@ namespace Inventory_Management_System_Cayanes.Data
                         cmd.ExecuteNonQuery();
                     }
                 }
+
                 string insertItem = @"INSERT INTO Items (ItemCode, ProductName, CategoryID, Description, UnitPrice, StockQuantity, ReorderLevel, CreatedBy, IsActive, CreatedDate) 
                                     VALUES (@ItemCode, @ProductName, 1, 'Sample item', 100.00, 10, 5, 1, True, Now())";
                 string[] itemCodes = new string[] { "IT001", "IT002", "IT003" };
