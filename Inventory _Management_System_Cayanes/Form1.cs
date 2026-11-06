@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using Inventory_Management_System_Cayanes.Models;
 using Inventory_Management_System_Cayanes.Services;
+
 namespace Inventory_Management_System_Cayanes
 {
     public partial class Form1 : Form
@@ -14,6 +15,8 @@ namespace Inventory_Management_System_Cayanes
         private CategoryService _categoryService;
         private TransactionLogger _logger;
         private Item _selectedItem;
+        private bool _gridConfigured = false;
+
         public Form1(User currentUser)
         {
             InitializeComponent();
@@ -22,6 +25,7 @@ namespace Inventory_Management_System_Cayanes
             _categoryService = new CategoryService();
             _logger = new TransactionLogger();
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             this.Text = $"Inventory Management System | User: {_currentUser.Username} ({_currentUser.Role})";
@@ -30,6 +34,7 @@ namespace Inventory_Management_System_Cayanes
             SetupUIPermissions();
             RefreshUI();
         }
+
         private void SetupUIPermissions()
         {
             bool isAdmin = _currentUser.IsAdmin();
@@ -48,6 +53,7 @@ namespace Inventory_Management_System_Cayanes
                 );
             }
         }
+
         private void LoadCategories()
         {
             try
@@ -62,6 +68,7 @@ namespace Inventory_Management_System_Cayanes
                 MessageBox.Show("Error loading categories: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void LoadItems()
         {
             try
@@ -75,12 +82,18 @@ namespace Inventory_Management_System_Cayanes
                 MessageBox.Show("Error loading items: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void ConfigureDataGridView()
         {
+            // Only set up columns once so we do not stack event handlers
+            if (_gridConfigured)
+            {
+                return;
+            }
+
             itemsDataGridView.AutoGenerateColumns = false;
             itemsDataGridView.Columns.Clear();
 
-            // Hidden column to store ItemID
             itemsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 DataPropertyName = "ItemID",
@@ -130,25 +143,38 @@ namespace Inventory_Management_System_Cayanes
                 HeaderText = "REORDER LEVEL",
                 Width = 100
             });
+
             itemsDataGridView.AllowUserToAddRows = false;
             itemsDataGridView.AllowUserToDeleteRows = false;
-            itemsDataGridView.ReadOnly = false;
+            itemsDataGridView.ReadOnly = true;
             itemsDataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            itemsDataGridView.MultiSelect = false;
 
-            // Subscribe to row click event for item selection
-            itemsDataGridView.CellClick += ItemsDataGridView_CellClick;
+            _gridConfigured = true;
         }
+
         private void RefreshUI()
         {
             LoadItems();
             ClearFields();
         }
+
         private void ClearFields()
         {
             itemIDTextBox.Text = "";
             itemCodeTextBox.Text = "";
             productNameTextBox.Text = "";
-            categoryComboBox.SelectedIndex = 0;
+
+            // Safe: only select first category if list is not empty
+            if (categoryComboBox.Items.Count > 0)
+            {
+                categoryComboBox.SelectedIndex = 0;
+            }
+            else
+            {
+                categoryComboBox.SelectedIndex = -1;
+            }
+
             descriptionTextBox.Text = "";
             unitPriceTextBox.Text = "0.00";
             stockQuantityTextBox.Text = "0";
@@ -156,12 +182,13 @@ namespace Inventory_Management_System_Cayanes
             searchIDTextBox.Text = "";
             _selectedItem = null;
             itemsDataGridView.ClearSelection();
-            // Reset row colors
+
             foreach (DataGridViewRow row in itemsDataGridView.Rows)
             {
                 row.DefaultCellStyle.BackColor = Color.White;
             }
         }
+
         private void addButton_Click(object sender, EventArgs e)
         {
             if (ValidateInputs())
@@ -172,17 +199,19 @@ namespace Inventory_Management_System_Cayanes
                     {
                         ItemCode = itemCodeTextBox.Text.Trim(),
                         ProductName = productNameTextBox.Text.Trim(),
-                        CategoryID = (int)categoryComboBox.SelectedValue,
+                        CategoryID = Convert.ToInt32(categoryComboBox.SelectedValue),
                         Description = descriptionTextBox.Text.Trim(),
                         UnitPrice = decimal.Parse(unitPriceTextBox.Text),
                         StockQuantity = int.Parse(stockQuantityTextBox.Text),
                         ReorderLevel = int.Parse(reorderLevelTextBox.Text)
                     };
+
                     if (_itemService.ItemCodeExists(item.ItemCode))
                     {
                         MessageBox.Show("Item code already exists!", "Duplicate Item", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
+
                     int itemID = _itemService.AddItem(item, _currentUser.UserID);
                     _logger.LogItemAdded(_currentUser.UserID, itemID, item.ItemCode, item.ProductName);
                     MessageBox.Show("Item added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -195,6 +224,7 @@ namespace Inventory_Management_System_Cayanes
                 }
             }
         }
+
         private void updateButton_Click(object sender, EventArgs e)
         {
             if (_selectedItem == null)
@@ -207,18 +237,20 @@ namespace Inventory_Management_System_Cayanes
                     "No Item Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
             if (ValidateInputs())
             {
                 try
                 {
                     string oldValues = $"ProductName: {_selectedItem.ProductName}, StockQuantity: {_selectedItem.StockQuantity}";
                     _selectedItem.ProductName = productNameTextBox.Text.Trim();
-                    _selectedItem.CategoryID = (int)categoryComboBox.SelectedValue;
+                    _selectedItem.CategoryID = Convert.ToInt32(categoryComboBox.SelectedValue);
                     _selectedItem.Description = descriptionTextBox.Text.Trim();
                     _selectedItem.UnitPrice = decimal.Parse(unitPriceTextBox.Text);
                     _selectedItem.StockQuantity = int.Parse(stockQuantityTextBox.Text);
                     _selectedItem.ReorderLevel = int.Parse(reorderLevelTextBox.Text);
                     string newValues = $"ProductName: {_selectedItem.ProductName}, StockQuantity: {_selectedItem.StockQuantity}";
+
                     bool success = _itemService.UpdateItem(_selectedItem, _currentUser.UserID);
                     if (success)
                     {
@@ -234,6 +266,7 @@ namespace Inventory_Management_System_Cayanes
                 }
             }
         }
+
         private void deleteButton_Click(object sender, EventArgs e)
         {
             if (!PermissionManager.CanDeleteItem(_currentUser))
@@ -242,13 +275,16 @@ namespace Inventory_Management_System_Cayanes
                     "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
             if (_selectedItem == null)
             {
                 MessageBox.Show("Please select an item to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
             DialogResult result = MessageBox.Show($"Are you sure you want to delete '{_selectedItem.ProductName}'?",
                 "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
             if (result == DialogResult.Yes)
             {
                 try
@@ -268,10 +304,12 @@ namespace Inventory_Management_System_Cayanes
                 }
             }
         }
+
         private void clearButton_Click(object sender, EventArgs e)
         {
             ClearFields();
         }
+
         private void searchButton_Click(object sender, EventArgs e)
         {
             string searchTerm = searchIDTextBox.Text.Trim();
@@ -280,11 +318,13 @@ namespace Inventory_Management_System_Cayanes
                 LoadItems();
                 return;
             }
+
             try
             {
                 List<Item> items = _itemService.SearchItems(searchTerm);
                 itemsDataGridView.DataSource = items;
                 _logger.LogItemSearch(_currentUser.UserID, searchTerm);
+
                 if (items.Count == 0)
                 {
                     MessageBox.Show("No items found matching your search.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -295,6 +335,8 @@ namespace Inventory_Management_System_Cayanes
                 MessageBox.Show("Error searching items: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        // Quiet selection - no MessageBox popup
         private void itemsDataGridView_SelectionChanged(object sender, EventArgs e)
         {
             if (itemsDataGridView.SelectedRows.Count > 0)
@@ -303,12 +345,15 @@ namespace Inventory_Management_System_Cayanes
                 Item item = row.DataBoundItem as Item;
                 if (item != null)
                 {
+                    // Clear previous highlight
+                    foreach (DataGridViewRow r in itemsDataGridView.Rows)
+                    {
+                        r.DefaultCellStyle.BackColor = Color.White;
+                    }
+
                     _selectedItem = item;
                     PopulateFormFields(item);
-                    // Visual feedback: highlight the row with selected item
                     row.DefaultCellStyle.BackColor = Color.LightBlue;
-                    MessageBox.Show($"Item selected for editing:\n\nProduct: {item.ProductName}\nItem ID: {item.ItemID}\n\nYou can now edit the fields and click UPDATE to save changes.",
-                        "Item Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
@@ -324,6 +369,7 @@ namespace Inventory_Management_System_Cayanes
             stockQuantityTextBox.Text = item.StockQuantity.ToString();
             reorderLevelTextBox.Text = item.ReorderLevel.ToString();
         }
+
         private bool ValidateInputs()
         {
             if (string.IsNullOrWhiteSpace(itemCodeTextBox.Text))
@@ -332,36 +378,50 @@ namespace Inventory_Management_System_Cayanes
                 itemCodeTextBox.Focus();
                 return false;
             }
+
             if (string.IsNullOrWhiteSpace(productNameTextBox.Text))
             {
                 MessageBox.Show("Product name is required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 productNameTextBox.Focus();
                 return false;
             }
+
+            if (categoryComboBox.SelectedValue == null)
+            {
+                MessageBox.Show("Please select a category.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                categoryComboBox.Focus();
+                return false;
+            }
+
             if (!decimal.TryParse(unitPriceTextBox.Text, out decimal price) || price < 0)
             {
                 MessageBox.Show("Unit price must be a valid number.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 unitPriceTextBox.Focus();
                 return false;
             }
+
             if (!int.TryParse(stockQuantityTextBox.Text, out int quantity) || quantity < 0)
             {
                 MessageBox.Show("Stock quantity must be a valid number.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 stockQuantityTextBox.Focus();
                 return false;
             }
+
             if (!int.TryParse(reorderLevelTextBox.Text, out int reorder) || reorder < 0)
             {
                 MessageBox.Show("Reorder level must be a valid number.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 reorderLevelTextBox.Focus();
                 return false;
             }
+
             return true;
         }
+
         private void homeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             RefreshUI();
         }
+
         private void categoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!PermissionManager.CanManageCategories(_currentUser))
@@ -372,6 +432,7 @@ namespace Inventory_Management_System_Cayanes
             }
             MessageBox.Show("Category management coming soon.", "Feature", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
         private void reportsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!PermissionManager.CanViewReports(_currentUser))
@@ -380,6 +441,7 @@ namespace Inventory_Management_System_Cayanes
                     "Permission Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
             try
             {
                 decimal totalValue = _itemService.GetTotalInventoryValue();
@@ -392,6 +454,7 @@ namespace Inventory_Management_System_Cayanes
                 MessageBox.Show("Error generating report: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!_currentUser.IsAdmin())
@@ -406,8 +469,6 @@ namespace Inventory_Management_System_Cayanes
                 using (SettingsForm settingsForm = new SettingsForm(_currentUser))
                 {
                     DialogResult result = settingsForm.ShowDialog(this);
-
-                    // If logout was clicked from settings
                     if (result == DialogResult.Cancel)
                     {
                         this.Close();
@@ -419,37 +480,17 @@ namespace Inventory_Management_System_Cayanes
                 MessageBox.Show("Error opening settings: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void logoutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             _logger.LogUserLogout(_currentUser.UserID);
             this.Close();
         }
 
-        private void ItemsDataGridView_CellClick(object sender, DataGridViewCellEventArgs e)
+        // Required by Designer - do not remove
+        private void searchPanel_Paint(object sender, PaintEventArgs e)
         {
-            // Handle row click for item selection
-            if (e.RowIndex >= 0)
-            {
-                DataGridViewRow row = itemsDataGridView.Rows[e.RowIndex];
-                Item item = row.DataBoundItem as Item;
-
-                if (item != null)
-                {
-                    // Clear previous selection highlighting
-                    foreach (DataGridViewRow r in itemsDataGridView.Rows)
-                    {
-                        r.DefaultCellStyle.BackColor = Color.White;
-                    }
-
-                    // Select this item and highlight the row
-                    _selectedItem = item;
-                    PopulateFormFields(item);
-                    row.DefaultCellStyle.BackColor = Color.LightBlue;
-
-                    MessageBox.Show($"Item selected for editing:\n\nProduct: {item.ProductName}\nItem ID: {item.ItemID}\n\nYou can now edit the fields and click UPDATE to save changes.",
-                        "Item Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
+            // Empty - required by Designer
         }
     }
 }
