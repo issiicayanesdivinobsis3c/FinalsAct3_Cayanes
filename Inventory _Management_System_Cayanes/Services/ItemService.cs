@@ -21,13 +21,14 @@ namespace Inventory_Management_System_Cayanes.Services
             List<Item> items = new List<Item>();
             try
             {
-                string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
-                               i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
-                               i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
-                               FROM Items i
-                               LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.IsActive = True
-                               ORDER BY i.ProductName";
+                // Access-friendly JOIN (parentheses + AS aliases)
+                string query = @"SELECT Items.ItemID, Items.ItemCode, Items.ProductName, Items.CategoryID, 
+                               Categories.CategoryName, Items.Description, Items.UnitPrice, Items.StockQuantity, 
+                               Items.ReorderLevel, Items.CreatedDate, Items.CreatedBy, Items.ModifiedDate, 
+                               Items.ModifiedBy, Items.IsActive
+                               FROM Items LEFT JOIN Categories ON (Items.CategoryID = Categories.CategoryID)
+                               WHERE Items.IsActive = True
+                               ORDER BY Items.ProductName";
                 DataTable result = _db.ExecuteDataTable(query);
                 foreach (DataRow row in result.Rows)
                 {
@@ -45,12 +46,12 @@ namespace Inventory_Management_System_Cayanes.Services
         {
             try
             {
-                string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
-                               i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
-                               i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
-                               FROM Items i
-                               LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.ItemID = @ItemID";
+                string query = @"SELECT Items.ItemID, Items.ItemCode, Items.ProductName, Items.CategoryID, 
+                               Categories.CategoryName, Items.Description, Items.UnitPrice, Items.StockQuantity, 
+                               Items.ReorderLevel, Items.CreatedDate, Items.CreatedBy, Items.ModifiedDate, 
+                               Items.ModifiedBy, Items.IsActive
+                               FROM Items LEFT JOIN Categories ON (Items.CategoryID = Categories.CategoryID)
+                               WHERE Items.ItemID = @ItemID";
                 OleDbParameter param = DatabaseHelper.CreateParameter("@ItemID", itemID);
                 DataTable result = _db.ExecuteDataTable(query, param);
                 if (result.Rows.Count > 0)
@@ -70,15 +71,17 @@ namespace Inventory_Management_System_Cayanes.Services
             List<Item> items = new List<Item>();
             try
             {
-                // OleDb is positional - need one parameter for each placeholder
-                string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
-                               i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
-                               i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
-                               FROM Items i
-                               LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.IsActive = True AND (i.ItemCode LIKE @SearchTerm1 OR i.ProductName LIKE @SearchTerm2 
-                               OR i.Description LIKE @SearchTerm3)
-                               ORDER BY i.ProductName";
+                // OleDb is positional - one parameter per placeholder
+                string query = @"SELECT Items.ItemID, Items.ItemCode, Items.ProductName, Items.CategoryID, 
+                               Categories.CategoryName, Items.Description, Items.UnitPrice, Items.StockQuantity, 
+                               Items.ReorderLevel, Items.CreatedDate, Items.CreatedBy, Items.ModifiedDate, 
+                               Items.ModifiedBy, Items.IsActive
+                               FROM Items LEFT JOIN Categories ON (Items.CategoryID = Categories.CategoryID)
+                               WHERE Items.IsActive = True 
+                               AND (Items.ItemCode LIKE @SearchTerm1 
+                                    OR Items.ProductName LIKE @SearchTerm2 
+                                    OR Items.Description LIKE @SearchTerm3)
+                               ORDER BY Items.ProductName";
 
                 string searchPattern = "%" + searchTerm + "%";
                 OleDbParameter[] parameters = new OleDbParameter[]
@@ -181,13 +184,13 @@ namespace Inventory_Management_System_Cayanes.Services
             List<Item> items = new List<Item>();
             try
             {
-                string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
-                               i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
-                               i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
-                               FROM Items i
-                               LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.IsActive = True AND i.StockQuantity <= i.ReorderLevel
-                               ORDER BY i.StockQuantity ASC";
+                string query = @"SELECT Items.ItemID, Items.ItemCode, Items.ProductName, Items.CategoryID, 
+                               Categories.CategoryName, Items.Description, Items.UnitPrice, Items.StockQuantity, 
+                               Items.ReorderLevel, Items.CreatedDate, Items.CreatedBy, Items.ModifiedDate, 
+                               Items.ModifiedBy, Items.IsActive
+                               FROM Items LEFT JOIN Categories ON (Items.CategoryID = Categories.CategoryID)
+                               WHERE Items.IsActive = True AND Items.StockQuantity <= Items.ReorderLevel
+                               ORDER BY Items.StockQuantity ASC";
                 DataTable result = _db.ExecuteDataTable(query);
                 foreach (DataRow row in result.Rows)
                 {
@@ -206,13 +209,13 @@ namespace Inventory_Management_System_Cayanes.Services
             List<Item> items = new List<Item>();
             try
             {
-                string query = @"SELECT i.ItemID, i.ItemCode, i.ProductName, i.CategoryID, c.CategoryName, 
-                               i.Description, i.UnitPrice, i.StockQuantity, i.ReorderLevel, i.CreatedDate, 
-                               i.CreatedBy, i.ModifiedDate, i.ModifiedBy, i.IsActive
-                               FROM Items i
-                               LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-                               WHERE i.IsActive = True AND i.CategoryID = @CategoryID
-                               ORDER BY i.ProductName";
+                string query = @"SELECT Items.ItemID, Items.ItemCode, Items.ProductName, Items.CategoryID, 
+                               Categories.CategoryName, Items.Description, Items.UnitPrice, Items.StockQuantity, 
+                               Items.ReorderLevel, Items.CreatedDate, Items.CreatedBy, Items.ModifiedDate, 
+                               Items.ModifiedBy, Items.IsActive
+                               FROM Items LEFT JOIN Categories ON (Items.CategoryID = Categories.CategoryID)
+                               WHERE Items.IsActive = True AND Items.CategoryID = @CategoryID
+                               ORDER BY Items.ProductName";
                 OleDbParameter param = DatabaseHelper.CreateParameter("@CategoryID", categoryID);
                 DataTable result = _db.ExecuteDataTable(query, param);
                 foreach (DataRow row in result.Rows)
