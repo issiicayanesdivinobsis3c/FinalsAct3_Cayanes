@@ -2,22 +2,26 @@ using System;
 using System.Data;
 using System.Data.OleDb;
 using System.IO;
+
 namespace Inventory_Management_System_Cayanes.Data
 {
     public class DatabaseHelper
     {
         private string _connectionString;
         private string _databasePath;
+
         public DatabaseHelper()
         {
             _databasePath = DatabaseInitializer.ResolveDatabasePath("InventoryDB.accdb");
             _connectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={_databasePath};Persist Security Info=False;Mode=Share Deny None;";
         }
+
         public DatabaseHelper(string databasePath)
         {
             _databasePath = DatabaseInitializer.ResolveDatabasePath(databasePath);
             _connectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={_databasePath};Persist Security Info=False;Mode=Share Deny None;";
         }
+
         public OleDbConnection GetConnection()
         {
             try
@@ -31,6 +35,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 throw new Exception("Database connection failed: " + ex.Message, ex);
             }
         }
+
         public int ExecuteNonQuery(string query, params OleDbParameter[] parameters)
         {
             using (OleDbConnection connection = GetConnection())
@@ -42,11 +47,11 @@ namespace Inventory_Management_System_Cayanes.Data
                         command.Parameters.AddRange(parameters);
                     }
                     int result = command.ExecuteNonQuery();
-                    connection.Close();
                     return result;
                 }
             }
         }
+
         public object ExecuteScalar(string query, params OleDbParameter[] parameters)
         {
             using (OleDbConnection connection = GetConnection())
@@ -61,6 +66,7 @@ namespace Inventory_Management_System_Cayanes.Data
                 }
             }
         }
+
         public DataTable ExecuteDataTable(string query, params OleDbParameter[] parameters)
         {
             DataTable dataTable = new DataTable();
@@ -87,26 +93,29 @@ namespace Inventory_Management_System_Cayanes.Data
             }
             return dataTable;
         }
+
         public OleDbDataReader ExecuteReader(string query, params OleDbParameter[] parameters)
         {
             OleDbConnection connection = GetConnection();
             try
             {
-                using (OleDbCommand command = new OleDbCommand(query, connection))
+                // Do NOT put command in using - reader needs the connection open
+                OleDbCommand command = new OleDbCommand(query, connection);
+                if (parameters != null)
                 {
-                    if (parameters != null)
-                    {
-                        command.Parameters.AddRange(parameters);
-                    }
-                    return command.ExecuteReader(CommandBehavior.CloseConnection);
+                    command.Parameters.AddRange(parameters);
                 }
+                // CloseConnection will close the connection when the reader is closed
+                return command.ExecuteReader(CommandBehavior.CloseConnection);
             }
             catch (Exception ex)
             {
                 connection.Close();
+                connection.Dispose();
                 throw new Exception("Error executing reader: " + ex.Message, ex);
             }
         }
+
         public bool TestConnection()
         {
             try
@@ -121,18 +130,22 @@ namespace Inventory_Management_System_Cayanes.Data
                 return false;
             }
         }
+
         public bool DatabaseExists()
         {
             return File.Exists(_databasePath);
         }
+
         public string GetDatabasePath()
         {
             return _databasePath;
         }
+
         public static OleDbParameter CreateParameter(string name, object value)
         {
             return new OleDbParameter(name, value ?? DBNull.Value);
         }
+
         public static OleDbParameter CreateParameter(string name, OleDbType type, int size, object value)
         {
             return new OleDbParameter(name, type, size) { Value = value ?? DBNull.Value };
